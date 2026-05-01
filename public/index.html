@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lead Intelligence Pipeline</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#05080f;color:#f1f5f9;font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh}
+  .grid-bg{position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(99,102,241,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.03) 1px,transparent 1px);background-size:28px 28px}
+  .wrap{max-width:860px;margin:0 auto;padding:28px 20px 60px;position:relative;z-index:1}
+  .header{margin-bottom:28px}
+  .header-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 24px rgba(99,102,241,0.35);flex-shrink:0}
+  .header-title{flex:1}
+  .header-label{font-size:10px;letter-spacing:.16em;color:#6366f1;font-weight:700;text-transform:uppercase}
+  .header-name{font-size:20px;font-weight:800;color:#f1f5f9;letter-spacing:-.02em;line-height:1.1}
+  .header-meta{font-size:9px;color:#334155;text-align:right;line-height:1.6}
+  .header-meta span{color:#6366f1;font-weight:700;display:block}
+  .node-bar{display:flex;align-items:center;padding:10px 0 4px;overflow-x:auto}
+  .nb-item{display:flex;align-items:center;flex:1}
+  .nb-icon{width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:11px;color:#334155;transition:all .3s;font-family:monospace;flex-shrink:0}
+  .nb-label{font-size:9px;color:#334155;font-weight:600;white-space:nowrap;margin-left:5px;transition:color .3s}
+  .nb-line{flex:1;height:1px;background:rgba(255,255,255,0.05);margin:0 8px;position:relative;transition:background .4s}
+  .nb-arrow{position:absolute;right:0;top:-4px;font-size:8px;color:#1e293b;transition:color .4s}
+  .nb-item.done .nb-icon{background:var(--c)22;border-color:var(--c)44;color:var(--c)}
+  .nb-item.done .nb-label{color:#94a3b8}
+  .nb-item.done .nb-line{background:var(--c)66}
+  .nb-item.done .nb-arrow{color:var(--c)}
+  .input-box{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;margin-bottom:12px}
+  .input-top{padding:8px 16px 4px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:8px}
+  .input-top-label{font-size:9px;color:#334155;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .char-count{margin-left:auto;font-size:9px;color:#1e293b;font-family:monospace}
+  textarea{width:100%;background:transparent;border:none;color:#e2e8f0;font-size:14px;line-height:1.7;padding:14px 16px;resize:none;font-family:inherit;outline:none}
+  textarea::placeholder{color:#1e293b}
+  .input-bottom{padding:10px 14px;border-top:1px solid rgba(255,255,255,0.04);display:flex;gap:8px;align-items:center}
+  .run-btn{padding:9px 24px;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:13px;font-weight:700;transition:all .15s;display:flex;align-items:center;gap:8px;font-family:inherit}
+  .run-btn:disabled{background:rgba(99,102,241,0.15);color:#4c4f7a;cursor:not-allowed}
+  .run-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,0.3)}
+  .hint{font-size:10px;color:#1e293b}
+  .total-time{margin-left:auto;font-size:10px;color:#475569;font-family:monospace}
+  .clear-btn{font-size:11px;color:#334155;background:transparent;border:none;cursor:pointer;padding:4px 8px;font-family:inherit}
+  .examples{margin-bottom:24px}
+  .section-label{font-size:9px;color:#334155;text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:7px}
+  .pills{display:flex;flex-wrap:wrap;gap:6px}
+  .pill{font-size:10px;padding:5px 12px;border-radius:20px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);color:#475569;cursor:pointer;transition:all .15s;font-family:inherit;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill:hover{background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.35);color:#a5b4fc}
+  .pipeline-wrap{margin-bottom:20px;animation:fadeUp .25s ease}
+  .pipeline-inner{display:flex;gap:14px}
+  .nodes-col{flex:1}
+  .state-col{width:260px;flex-shrink:0}
+  .state-box{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:12px;height:100%;font-family:'JetBrains Mono',monospace;font-size:9px;color:#334155;line-height:1.9;overflow:auto;max-height:400px}
+  .state-header{color:#6366f1;margin-bottom:6px;font-size:10px;font-weight:700}
+  .node-card{border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);border-radius:12px;padding:14px 16px;transition:all .3s;position:relative;overflow:hidden}
+  .node-card.running{border-color:var(--c)88;background:var(--c)08}
+  .node-card.done{border-color:var(--c)55;background:var(--c)08}
+  .shimmer{position:absolute;top:0;left:-100%;right:0;height:100%;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.1),transparent);animation:shimmer 1.4s ease-in-out infinite;pointer-events:none}
+  .node-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .node-icon-wrap{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:14px;color:#334155;font-family:monospace;transition:all .3s;flex-shrink:0}
+  .node-card.running .node-icon-wrap,.node-card.done .node-icon-wrap{background:var(--c)22;border-color:var(--c)44;color:var(--c)}
+  .node-info{flex:1}
+  .node-name{font-size:11px;font-weight:700;color:#475569;letter-spacing:.02em;transition:color .3s}
+  .node-card.running .node-name,.node-card.done .node-name{color:#e2e8f0}
+  .node-desc{font-size:9px;color:#334155;margin-top:1px}
+  .node-dot{width:7px;height:7px;border-radius:50%;background:#334155;transition:all .3s}
+  .node-card.running .node-dot{background:var(--c);box-shadow:0 0 8px var(--c);animation:pulse 1s infinite}
+  .node-card.done .node-dot{background:#10b981}
+  .node-latency{font-size:9px;color:#334155;font-family:monospace;margin-top:2px}
+  .processing{font-size:10px;color:var(--c);display:flex;align-items:center;gap:6px}
+  .spinner{width:10px;height:10px;border:1.5px solid rgba(99,102,241,0.2);border-top-color:var(--c);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+  .node-preview{font-size:10px;color:#64748b;line-height:1.7}
+  .node-preview span{color:#94a3b8}
+  .connector{display:flex;flex-direction:column;align-items:center;padding:4px 0}
+  .conn-line{width:1.5px;height:18px;background:rgba(255,255,255,0.06);transition:background .4s}
+  .conn-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.06);transition:all .4s}
+  .connector.done .conn-line{background:var(--c)}
+  .connector.done .conn-dot{background:var(--c);box-shadow:0 0 8px var(--c)}
+  .error-box{background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;color:#f87171;font-size:12px;margin-bottom:16px}
+  .lead-card{border-radius:14px;overflow:hidden;animation:fadeUp .4s ease}
+  .lead-header{padding:16px 20px;display:flex;align-items:center;gap:14px}
+  .action-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .action-name{font-size:16px;font-weight:800;letter-spacing:-.02em;font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+  .action-reason{font-size:11px;color:#94a3b8}
+  .intent-score{text-align:right;flex-shrink:0}
+  .conf-val{font-size:20px;font-weight:800;color:#f1f5f9;font-family:'JetBrains Mono',monospace}
+  .intent-label{font-size:9px;color:#475569;text-transform:uppercase;letter-spacing:.08em}
+  .lead-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.03)}
+  .grid-cell{padding:10px 14px;background:rgba(0,0,0,0.2)}
+  .cell-label{font-size:9px;color:#334155;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+  .cell-val{font-size:11px;color:#cbd5e1;font-weight:600}
+  .lead-next{padding:12px 20px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:8px}
+  .next-label{font-size:9px;color:#334155;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+  .next-val{font-size:11px;color:#94a3b8}
+  .lead-flags{padding:10px 20px;border-top:1px solid rgba(255,255,255,0.04);display:flex;gap:6px;flex-wrap:wrap}
+  .flag{font-size:9px;padding:2px 8px;border-radius:99px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .flag.danger{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)}
+  .flag.normal{background:rgba(255,255,255,0.05);color:#475569;border:1px solid rgba(255,255,255,0.06)}
+  .escalation-bar{padding:10px 20px;border-top:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.05);display:flex;gap:8px}
+  .esc-label{font-size:9px;color:#ef4444;font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;margin-top:2px}
+  .esc-val{font-size:11px;color:#fca5a5}
+  .urgency-badge{font-size:9px;padding:2px 7px;border-radius:99px;font-weight:700;letter-spacing:.08em}
+  .escalate-badge{font-size:9px;padding:2px 7px;border-radius:99px;font-weight:700;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3)}
+  details{margin-top:10px}
+  summary{font-size:10px;color:#334155;cursor:pointer;user-select:none;letter-spacing:.06em;padding:6px 0}
+  pre{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;font-size:10px;color:#64748b;overflow:auto;margin-top:8px;line-height:1.8;font-family:'JetBrains Mono',monospace}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+  @keyframes shimmer{0%{left:-100%}100%{left:100%}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">⬡</div>
+      <div class="header-title">
+        <div class="header-label">Agentic Intake Pipeline</div>
+        <div class="header-name">Multi-Node Lead Intelligence</div>
+      </div>
+      <div class="header-meta"><span>LangGraph Architecture</span>4 sequential agent nodes</div>
+    </div>
+    <div class="node-bar">
+      <div class="nb-item" id="nb-classify" style="--c:#6366f1">
+        <div class="nb-icon">⬡</div><span class="nb-label">Intent Classifier</span>
+        <div class="nb-line"><span class="nb-arrow">▶</span></div>
+      </div>
+      <div class="nb-item" id="nb-assess" style="--c:#f97316">
+        <div class="nb-icon">◈</div><span class="nb-label">Urgency Engine</span>
+        <div class="nb-line"><span class="nb-arrow">▶</span></div>
+      </div>
+      <div class="nb-item" id="nb-enrich" style="--c:#10b981">
+        <div class="nb-icon">◎</div><span class="nb-label">Lead Enrichment</span>
+        <div class="nb-line"><span class="nb-arrow">▶</span></div>
+      </div>
+      <div class="nb-item" id="nb-route" style="--c:#8b5cf6">
+        <div class="nb-icon">⬢</div><span class="nb-label">Routing Agent</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-box">
+    <div class="input-top">
+      <span class="input-top-label">Homeowner Intake Request</span>
+      <span class="char-count" id="charCount">0 chars</span>
+    </div>
+    <textarea id="inputText" rows="4" placeholder="Paste a homeowner service request to run through the pipeline…"></textarea>
+    <div class="input-bottom">
+      <button class="run-btn" id="runBtn" onclick="runPipeline()" disabled>Run Pipeline ⬡</button>
+      <span class="hint">⌘ Enter</span>
+      <span class="total-time" id="totalTime"></span>
+      <button class="clear-btn" id="clearBtn" onclick="clearAll()" style="display:none">Clear</button>
+    </div>
+  </div>
+
+  <div class="examples">
+    <div class="section-label">Try an example</div>
+    <div class="pills" id="pills"></div>
+  </div>
+
+  <div id="pipelineWrap" style="display:none" class="pipeline-wrap">
+    <div class="section-label">Pipeline Execution</div>
+    <div class="pipeline-inner">
+      <div class="nodes-col" id="nodesCol"></div>
+      <div class="state-col">
+        <div class="state-box" id="stateBox">
+          <div class="state-header">// pipeline state</div>
+          <div id="stateContent"></div>
+          <span id="stateCursor" style="color:#6366f1;display:none">▋</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorBox" class="error-box" style="display:none"></div>
+
+  <div id="leadCardWrap" style="display:none">
+    <div class="section-label" style="margin-bottom:10px">Operator Lead Card — Ready for CRM</div>
+    <div id="leadCard" class="lead-card"></div>
+    <details>
+      <summary>VIEW RAW JSON OUTPUT</summary>
+      <pre id="jsonOutput"></pre>
+    </details>
+  </div>
+</div>
+
+<script>
+const EXAMPLES = [
+  "My AC stopped working completely. It's 97 degrees and I have a newborn at home.",
+  "Thinking about getting a new kitchen — just exploring options, no rush.",
+  "There's a gas smell coming from my basement. It started this morning.",
+  "My roof has been leaking for a week. Water damage on the ceiling now.",
+  "Want to upgrade to a smart thermostat, pretty low priority for me.",
+  "Furnace making loud banging sounds, keeps shutting off. Two elderly parents at home.",
+];
+
+const NODES = [
+  { id:"classify", label:"Intent Classifier", icon:"⬡", color:"#6366f1", desc:"Identifies service category and issue type",
+    system:`You are the Intent Classification node in an agentic home services intake pipeline. Respond with valid JSON only, no markdown, no explanation:\n{"serviceCategory":string,"issueType":string,"primaryKeywords":string[],"confidence":number}\nserviceCategory examples: "HVAC Repair","Plumbing","Electrical","Roofing","Remodeling","Solar". confidence: 0-100` },
+  { id:"assess", label:"Urgency Engine", icon:"◈", color:"#f97316", desc:"Scores urgency and detects safety signals",
+    system:`You are the Urgency Assessment node in an agentic home services intake pipeline. Respond with valid JSON only, no markdown:\n{"urgency":"CRITICAL"|"HIGH"|"MEDIUM"|"LOW","urgencyScore":number,"urgencyReason":string,"timeline":"Today"|"This Week"|"This Month"|"Flexible"|"Exploring","safetyRisk":boolean,"safetyDetail":string|null,"flags":string[]}\nflags examples: ["emergency","safety risk","elderly resident","family with children","seasonal","price shopping","potential upsell"]` },
+  { id:"enrich", label:"Lead Enrichment", icon:"◎", color:"#10b981", desc:"Estimates job value and extracts context",
+    system:`You are the Lead Enrichment node in an agentic home services intake pipeline. Respond with valid JSON only, no markdown:\n{"estimatedJobSize":"SMALL"|"MEDIUM"|"LARGE"|"ENTERPRISE","estimatedValue":string,"revenueSignal":number,"intentStrength":number,"membershipUpsellLikely":boolean,"extractedDetails":{"location":string|null,"timeConstraint":string|null,"affectedPersons":string|null}}\nestimatedValue: dollar range e.g. "$150-$400". intentStrength: 1-10` },
+  { id:"route", label:"Routing Agent", icon:"⬢", color:"#8b5cf6", desc:"Routes to correct queue and CRM system",
+    system:`You are the Routing Agent node in an agentic home services intake pipeline. Respond with valid JSON only, no markdown:\n{"action":"BOOK NOW"|"CALL BACK"|"ROUTE TO SALES"|"FOLLOW UP","actionReason":string,"assignedQueue":string,"crmTarget":"ServiceTitan"|"Salesforce"|"i360"|"LeadPerfection","escalateToHuman":boolean,"escalationReason":string|null,"nextStep":string,"slaHours":number,"confidenceScore":number}\nassignedQueue examples: "Emergency Dispatch","Standard Booking","Inside Sales","Nurture Sequence"` }
+];
+
+const ACTION_META = {
+  "BOOK NOW":       {color:"#10b981",bg:"rgba(16,185,129,0.08)",border:"rgba(16,185,129,0.3)",icon:"⚡"},
+  "CALL BACK":      {color:"#f59e0b",bg:"rgba(245,158,11,0.08)",border:"rgba(245,158,11,0.3)",icon:"📞"},
+  "ROUTE TO SALES": {color:"#6366f1",bg:"rgba(99,102,241,0.08)",border:"rgba(99,102,241,0.3)",icon:"💬"},
+  "FOLLOW UP":      {color:"#64748b",bg:"rgba(100,116,139,0.08)",border:"rgba(100,116,139,0.3)",icon:"🔔"},
+};
+const URGENCY_COLOR = {CRITICAL:"#ef4444",HIGH:"#f97316",MEDIUM:"#f59e0b",LOW:"#94a3b8"};
+
+let state={}, latency={}, running=false;
+
+// Build pills
+const pillsEl = document.getElementById('pills');
+EXAMPLES.forEach(ex => {
+  const b = document.createElement('button');
+  b.className='pill';
+  b.textContent = ex.length>55 ? ex.slice(0,55)+'…' : ex;
+  b.onclick = ()=>{ document.getElementById('inputText').value=ex; updateChar(); runPipeline(); };
+  pillsEl.appendChild(b);
+});
+
+const inputEl = document.getElementById('inputText');
+inputEl.addEventListener('input', updateChar);
+inputEl.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='Enter') runPipeline(); });
+
+function updateChar(){
+  const v=inputEl.value;
+  document.getElementById('charCount').textContent=v.length+' chars';
+  document.getElementById('runBtn').disabled=!v.trim()||running;
+  document.getElementById('clearBtn').style.display=v?'inline-block':'none';
+}
+
+function clearAll(){
+  inputEl.value=''; updateChar();
+  document.getElementById('pipelineWrap').style.display='none';
+  document.getElementById('leadCardWrap').style.display='none';
+  document.getElementById('errorBox').style.display='none';
+  document.getElementById('totalTime').textContent='';
+  state={}; latency={};
+  NODES.forEach(n=>document.getElementById('nb-'+n.id)?.classList.remove('done'));
+}
+
+async function callClaude(system, userContent){
+  const res = await fetch('/api/classify',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system,
+      messages:[{role:'user',content:userContent}]
+    })
+  });
+  const data = await res.json();
+  const raw = data.content?.[0]?.text||'{}';
+  return JSON.parse(raw.replace(/```json|```/g,'').trim());
+}
+
+function buildNodesUI(){
+  const col=document.getElementById('nodesCol');
+  col.innerHTML='';
+  NODES.forEach((n,i)=>{
+    const card=document.createElement('div');
+    card.className='node-card';
+    card.id='card-'+n.id;
+    card.style.cssText=`--c:${n.color}`;
+    card.innerHTML=`
+      <div class="node-top">
+        <div class="node-icon-wrap">${n.icon}</div>
+        <div class="node-info">
+          <div class="node-name">${n.label}</div>
+          <div class="node-desc">${n.desc}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+          <div class="node-dot"></div>
+          <div class="node-latency" id="lat-${n.id}"></div>
+        </div>
+      </div>
+      <div id="node-body-${n.id}"></div>`;
+    col.appendChild(card);
+    if(i<NODES.length-1){
+      const conn=document.createElement('div');
+      conn.className='connector';
+      conn.id='conn-'+n.id;
+      conn.style.cssText=`--c:${NODES[i+1].color}`;
+      conn.innerHTML='<div class="conn-line"></div><div class="conn-dot"></div><div class="conn-line"></div>';
+      col.appendChild(conn);
+    }
+  });
+}
+
+function setNodeRunning(id,color){
+  const card=document.getElementById('card-'+id);
+  card.className='node-card running';
+  card.style.cssText=`--c:${color}`;
+  document.getElementById('node-body-'+id).innerHTML=`<div class="shimmer"></div><div class="processing" style="--c:${color}"><div class="spinner" style="--c:${color}"></div>Processing…</div>`;
+}
+
+function setNodeDone(id,color,result,ms){
+  const card=document.getElementById('card-'+id);
+  card.className='node-card done';
+  card.style.cssText=`--c:${color}`;
+  document.getElementById('lat-'+id).textContent=ms+'ms';
+  const entries=Object.entries(result).slice(0,3);
+  document.getElementById('node-body-'+id).innerHTML=`<div class="node-preview">${entries.map(([k,v])=>`<div><span>${k}</span>: ${Array.isArray(v)?v.join(', '):String(v).slice(0,40)}</div>`).join('')}</div>`;
+  document.getElementById('nb-'+id)?.classList.add('done');
+  const conn=document.getElementById('conn-'+id);
+  if(conn) conn.classList.add('done');
+  updateStateBox();
+}
+
+function updateStateBox(){
+  document.getElementById('stateContent').innerHTML=NODES.map(n=>state[n.id]?`
+    <div style="margin-bottom:8px">
+      <div style="color:${n.color}">${n.id}: {</div>
+      ${Object.entries(state[n.id]).slice(0,4).map(([k,v])=>`<div style="padding-left:10px;color:#475569"><span style="color:#94a3b8">${k}</span>: <span style="color:${typeof v==='number'?'#f97316':typeof v==='boolean'?'#ef4444':'#10b981'}">${typeof v==='string'&&v.length>22?'"'+v.slice(0,22)+'…"':JSON.stringify(v)}</span></div>`).join('')}
+      <div style="color:${n.color}">}</div>
+    </div>`:''
+  ).join('');
+  document.getElementById('stateCursor').style.display=running?'inline':'none';
+}
+
+function buildLeadCard(results){
+  const {classify,assess,enrich,route}=results;
+  if(!route) return;
+  const am=ACTION_META[route.action]||ACTION_META['FOLLOW UP'];
+  const uc=URGENCY_COLOR[assess?.urgency]||'#94a3b8';
+  document.getElementById('leadCard').style.cssText=`border:1px solid ${am.border};background:${am.bg}`;
+  document.getElementById('leadCard').innerHTML=`
+    <div class="lead-header" style="background:linear-gradient(135deg,${am.color}18,transparent);border-bottom:1px solid ${am.color}22">
+      <div class="action-icon" style="background:${am.color}22;border:1.5px solid ${am.color}55">${am.icon}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="action-name" style="color:${am.color}">${route.action}</span>
+          <span class="urgency-badge" style="background:${uc}22;color:${uc};border:1px solid ${uc}44">${assess?.urgency}</span>
+          ${route.escalateToHuman?'<span class="escalate-badge">ESCALATE</span>':''}
+        </div>
+        <div class="action-reason">${route.actionReason}</div>
+      </div>
+      <div class="intent-score">
+        <div class="conf-val">${route.confidenceScore}<span style="font-size:11px;color:#475569">%</span></div>
+        <div class="intent-label">Confidence</div>
+      </div>
+    </div>
+    <div class="lead-grid">
+      ${[['SERVICE',classify?.serviceCategory],['ISSUE',classify?.issueType],['TIMELINE',assess?.timeline],['JOB SIZE',enrich?.estimatedJobSize],['EST. VALUE',enrich?.estimatedValue],['INTENT',`${enrich?.intentStrength}/10`],['CRM TARGET',route?.crmTarget],['QUEUE',route?.assignedQueue],['SLA',`${route?.slaHours}h`]].map(([l,v])=>`<div class="grid-cell"><div class="cell-label">${l}</div><div class="cell-val">${v||'—'}</div></div>`).join('')}
+    </div>
+    <div class="lead-next"><span class="next-label">Next Step</span><span class="next-val">${route.nextStep}</span></div>
+    ${assess?.flags?.length?`<div class="lead-flags">${assess.flags.map(f=>`<span class="flag ${f.includes('safety')||f.includes('emergency')?'danger':'normal'}">${f}</span>`).join('')}</div>`:''}
+    ${route.escalateToHuman&&route.escalationReason?`<div class="escalation-bar"><span class="esc-label">Human Escalation</span><span class="esc-val">${route.escalationReason}</span></div>`:''}
+  `;
+  document.getElementById('jsonOutput').textContent=JSON.stringify(results,null,2);
+  document.getElementById('leadCardWrap').style.display='block';
+  document.getElementById('leadCardWrap').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function runPipeline(){
+  const text=inputEl.value.trim();
+  if(!text||running) return;
+  running=true;
+  const t0=Date.now();
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('errorBox').style.display='none';
+  document.getElementById('leadCardWrap').style.display='none';
+  document.getElementById('totalTime').textContent='';
+  state={}; latency={};
+  buildNodesUI();
+  document.getElementById('pipelineWrap').style.display='block';
+  document.getElementById('stateCursor').style.display='inline';
+
+  try {
+    let t;
+    setNodeRunning('classify','#6366f1');
+    t=Date.now(); state.classify=await callClaude(NODES[0].system,`Homeowner request: "${text}"`); latency.classify=Date.now()-t;
+    setNodeDone('classify','#6366f1',state.classify,latency.classify);
+
+    setNodeRunning('assess','#f97316');
+    t=Date.now(); state.assess=await callClaude(NODES[1].system,`Homeowner request: "${text}"\n\nClassification: ${JSON.stringify(state.classify)}`); latency.assess=Date.now()-t;
+    setNodeDone('assess','#f97316',state.assess,latency.assess);
+
+    setNodeRunning('enrich','#10b981');
+    t=Date.now(); state.enrich=await callClaude(NODES[2].system,`Homeowner request: "${text}"\n\nClassification: ${JSON.stringify(state.classify)}\n\nUrgency: ${JSON.stringify(state.assess)}`); latency.enrich=Date.now()-t;
+    setNodeDone('enrich','#10b981',state.enrich,latency.enrich);
+
+    setNodeRunning('route','#8b5cf6');
+    t=Date.now(); state.route=await callClaude(NODES[3].system,`Homeowner request: "${text}"\n\nPipeline state:\n${JSON.stringify(state,null,2)}`); latency.route=Date.now()-t;
+    setNodeDone('route','#8b5cf6',state.route,latency.route);
+
+    document.getElementById('totalTime').textContent='Total: '+((Date.now()-t0)/1000).toFixed(1)+'s';
+    buildLeadCard(state);
+  } catch(e){
+    document.getElementById('errorBox').textContent='Pipeline error: '+e.message;
+    document.getElementById('errorBox').style.display='block';
+  }
+  running=false;
+  document.getElementById('runBtn').disabled=false;
+  updateStateBox();
+}
+</script>
+</body>
+</html>
