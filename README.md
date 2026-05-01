@@ -41,9 +41,3 @@ Operator Lead Card
 - Vanilla HTML/JS
 - Anthropic Claude API (`claude-sonnet-4-20250514`)
 - Vercel serverless proxy
-
----
-
-## Related
-
-- [Operator Revenue Dashboard](https://frontline-ops-dashboard.vercel.app) — lead source conversion and AI agent activity by operator
