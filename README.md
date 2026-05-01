@@ -2,7 +2,12 @@
 
 Multi-node agentic intake system for home service operators. Classifies inbound requests through four sequential AI nodes — intent, urgency, enrichment, routing — and outputs a structured lead card with CRM assignment and action decision.
 
-**Live:** [deploy URL here]
+**Live:** https://lead-pipeline-six.vercel.app
+
+---
+
+![Pipeline execution showing four sequential nodes with live state](screenshot-1.png)
+![Operator lead card with CRM routing and human escalation](screenshot-2.png)
 
 ---
 
@@ -41,4 +46,4 @@ Operator Lead Card
 
 ## Related
 
-- [Operator Revenue Dashboard](link) — lead source conversion and AI agent activity by operator
+- [Operator Revenue Dashboard](https://frontline-ops-dashboard.vercel.app) — lead source conversion and AI agent activity by operator
