@@ -33,25 +33,9 @@ Operator Lead Card
 
 ## Stack
 
-- Vanilla HTML/JS frontend
+- Vanilla HTML/JS
 - Anthropic Claude API (`claude-sonnet-4-20250514`)
-- Vercel serverless function proxy (`/api/classify`)
-- Deployed on Vercel
-
----
-
-## Deploy
-
-1. Push repo to GitHub
-2. Import to Vercel
-3. Add environment variable: `ANTHROPIC_KEY` = your Anthropic API key
-4. Deploy — works for any visitor, no key required
-
----
-
-## Local Setup
-
-Add your key directly to `api/classify.js` for local testing, or use a `.env` file with `ANTHROPIC_KEY=your_key_here`.
+- Vercel serverless proxy
 
 ---
 
